@@ -4,13 +4,7 @@ import com.tenera.io.dto.OpenWeatherMapApiResponse;
 import com.tenera.io.dto.WeatherDetailDto;
 import com.tenera.io.dto.WeatherHistoryDto;
 import com.tenera.io.exception.NoCityFoundException;
-import com.tenera.io.exception.NoHistoryFoundException;
-import com.tenera.io.model.City;
-import com.tenera.io.model.SearchQuery;
 import com.tenera.io.model.WeatherHistory;
-import com.tenera.io.repository.CityRepository;
-import com.tenera.io.repository.SearchQueryRepository;
-import com.tenera.io.repository.WeatherHistoryRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +23,7 @@ import static com.tenera.io.dto.Weather.shouldTakeUmbrella;
 public class WeatherService {
 
     private final RestTemplate restTemplate;
-    private final CityRepository cityRepository;
-    private final WeatherHistoryRepository weatherHistoryRepository;
-    private final SearchQueryRepository searchQueryRepository;
+    private final WeatherHistoryService weatherHistoryService;
 
     @Value("${open.weather.map.api.key}")
     private String openWeatherMapApiKey;
@@ -39,17 +31,15 @@ public class WeatherService {
     @Value("${open.weather.map.api.url}")
     private String openWeatherMapApiUrl;
 
-    public WeatherService(RestTemplate restTemplate, CityRepository cityRepository, WeatherHistoryRepository weatherHistoryRepository, SearchQueryRepository searchQueryRepository) {
+    public WeatherService(RestTemplate restTemplate, WeatherHistoryService weatherHistoryService) {
         this.restTemplate = restTemplate;
-        this.cityRepository = cityRepository;
-        this.weatherHistoryRepository = weatherHistoryRepository;
-        this.searchQueryRepository = searchQueryRepository;
+        this.weatherHistoryService = weatherHistoryService;
     }
 
     public WeatherDetailDto weatherByLocation(String location) throws Exception {
         try {
             ResponseEntity<OpenWeatherMapApiResponse> response = getWeatherDetailsByApi(location);
-            WeatherDetailDto weatherDetailDto = weatherDetailResponse(response);
+            WeatherDetailDto weatherDetailDto = weatherDetailResponse(response, location);
             auditSearchQuery(weatherDetailDto, location);
             return weatherDetailDto;
         } catch (Exception e) {
@@ -63,29 +53,12 @@ public class WeatherService {
     }
 
     public WeatherHistoryDto searchHistoryByCityName(String name) {
-        List<SearchQuery> searchQueries = searchQueryRepository.findByQuery(name);
-        if (searchQueries == null || searchQueries.isEmpty()) {
-            throw new NoHistoryFoundException("No histories found for given query/city");
-        }
-        List<WeatherHistory> weatherHistories = weatherHistoryRepository.findTop5ByCityOrderByCreatedAtDesc(searchQueries.get(0).getCity());
+        List<WeatherHistory> weatherHistories = weatherHistoryService.searchHistoryByCityName(name);
         return mapHistories(weatherHistories);
     }
 
     private void auditSearchQuery(WeatherDetailDto weatherDetailDto, String name) {
-        City city = getOrCreateCity(weatherDetailDto);
-        searchQueryRepository.save(new SearchQuery(name, city));
-        WeatherHistory weatherHistory = new WeatherHistory(city, weatherDetailDto.getTemperature(),
-                weatherDetailDto.getPressure(), weatherDetailDto.isShouldCarryUmbrella());
-        weatherHistoryRepository.save(weatherHistory);
-    }
-
-    private City getOrCreateCity(WeatherDetailDto weatherDetailDto) {
-        City city = cityRepository.findByName(weatherDetailDto.getName());
-        if (city == null) {
-            city = new City(weatherDetailDto.getName());
-            city = cityRepository.save(city);
-        }
-        return city;
+        weatherHistoryService.auditSearchHistory(weatherDetailDto);
     }
 
     private ResponseEntity<OpenWeatherMapApiResponse> getWeatherDetailsByApi(String location) {
@@ -93,12 +66,13 @@ public class WeatherService {
                 + openWeatherMapApiKey + "&q=" + location, OpenWeatherMapApiResponse.class);
     }
 
-    private WeatherDetailDto weatherDetailResponse(ResponseEntity<OpenWeatherMapApiResponse> response) {
+    private WeatherDetailDto weatherDetailResponse(ResponseEntity<OpenWeatherMapApiResponse> response, String location) {
         if (response != null && response.hasBody()) {
             boolean shouldTakeUmbrella = decisionToCarryUmbrella(response);
             double temperature = Objects.requireNonNull(response.getBody()).getMetaDataDto().getTemp();
             long pressure = response.getBody().getMetaDataDto().getPressure();
             return WeatherDetailDto.builder()
+                    .query(location)
                     .name(response.getBody().getName())
                     .pressure(pressure)
                     .shouldCarryUmbrella(shouldTakeUmbrella)
@@ -117,7 +91,7 @@ public class WeatherService {
 
     private WeatherHistoryDto mapHistories(List<WeatherHistory> weatherHistories) {
         double averageTemperature = getAverageTemperature(weatherHistories);
-        double averagePressure = getAveragePressure(weatherHistories);
+        long averagePressure = getAveragePressure(weatherHistories);
         List<WeatherDetailDto> weatherDetailDtos = weatherHistories.stream()
                 .map(this::mapHistory)
                 .collect(Collectors.toList());
@@ -129,17 +103,18 @@ public class WeatherService {
     }
 
     private double getAverageTemperature(List<WeatherHistory> weatherHistories) {
-        return weatherHistories.stream()
+        double avgTemperature = weatherHistories.stream()
                 .mapToDouble(WeatherHistory::getTemperature)
                 .average()
                 .orElse(Double.NaN);
+        return Math.ceil(avgTemperature * 100) / 100;
     }
 
-    private double getAveragePressure(List<WeatherHistory> weatherHistories){
-        return weatherHistories.stream()
-                .mapToDouble(WeatherHistory::getPressure)
+    private long getAveragePressure(List<WeatherHistory> weatherHistories) {
+        return (long) weatherHistories.stream()
+                .mapToLong(WeatherHistory::getPressure)
                 .average()
-                .orElse(Double.NaN);
+                .orElse(0);
     }
 
     private WeatherDetailDto mapHistory(WeatherHistory weatherHistory) {

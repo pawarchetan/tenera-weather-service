@@ -7,8 +7,11 @@ import lombok.Data;
 
 @Data
 @Builder
-@JsonIgnoreProperties({"id", "openApiId", "name"})
+@JsonIgnoreProperties({"name", "query"})
 public class WeatherDetailDto {
+
+    @JsonProperty("query")
+    private String query;
 
     @JsonProperty("name")
     private String name;
@@ -16,7 +19,7 @@ public class WeatherDetailDto {
     @JsonProperty("temp")
     private double temperature;
 
-    private double pressure;
+    private long pressure;
 
     @JsonProperty("umbrella")
     private boolean shouldCarryUmbrella;

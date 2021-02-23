@@ -26,14 +26,14 @@ public class WeatherHistory {
     private City city;
 
     private double temperature;
-    private double pressure;
+    private long pressure;
     private boolean umbrella;
 
     @Temporal(TemporalType.TIMESTAMP)
     @CreatedDate
     private Date createdAt;
 
-    public WeatherHistory(City city, double temperature, double pressure, boolean umbrella) {
+    public WeatherHistory(City city, double temperature, long pressure, boolean umbrella) {
         this.city = city;
         this.temperature = temperature;
         this.pressure = pressure;

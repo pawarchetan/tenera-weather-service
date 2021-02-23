@@ -12,7 +12,7 @@ public class WeatherHistoryDto {
     @JsonProperty("avg_temp")
     private double averageTemperature;
     @JsonProperty("avg_pressure")
-    private double averagePressure;
+    private long averagePressure;
     @JsonProperty("history")
     private List<WeatherDetailDto> historyList;
 }
