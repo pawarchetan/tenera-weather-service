@@ -8,11 +8,12 @@
 * Implement REST API to search for weather information history by location (latest 5 records)
 
 #### Technology used :
-* Java8
+* Java
 * JUnit
 * SpringBoot
 * H2 DB
 * Gradle
+* Lombok
 * IDE used --> IntelliJ
 
 #### High Level Design decisions:
@@ -62,4 +63,4 @@ City_Id | bigint |
 * Above 95%, most of the code has been covered (measured using Intellij IDEA plugin)
 
 #### API Documentation:
-* Swagger has been used to document api. Swagger is accessible at: http://localhost:8080/swagger-ui.html
+* Swagger has been used to document api. Swagger API is accessible at: http://localhost:8080/swagger-ui.html
