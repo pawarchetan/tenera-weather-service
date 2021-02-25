@@ -14,7 +14,7 @@ import javax.persistence.*;
 @Table(indexes = @Index(columnList = "query"))
 public class SearchQuery {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @JsonIgnore
     private long id;
 

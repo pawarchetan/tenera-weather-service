@@ -3,6 +3,7 @@ package com.tenera.io.controller;
 import com.tenera.io.dto.TeneraSearchError;
 import com.tenera.io.exception.NoCityFoundException;
 import com.tenera.io.exception.NoHistoryFoundException;
+import com.tenera.io.exception.TeneraApplicationException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +36,8 @@ public class DefaultControllerAdvice {
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<TeneraSearchError> handleInternalServerError(Exception ex) {
+    @ExceptionHandler(TeneraApplicationException.class)
+    public ResponseEntity<TeneraSearchError> handleTeneraApplicationException(Exception ex) {
         log.error("Exception occurred : " + ex);
         TeneraSearchError teneraSearchError = new TeneraSearchError();
         teneraSearchError.setMessage(ex.getMessage());

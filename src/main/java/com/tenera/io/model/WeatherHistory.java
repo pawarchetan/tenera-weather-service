@@ -17,12 +17,12 @@ import java.util.Date;
 @EntityListeners(AuditingEntityListener.class)
 public class WeatherHistory {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @JsonIgnore
     private long id;
 
     @ManyToOne
-    @JoinColumn(name="city_id", nullable=false)
+    @JoinColumn(name = "city_id", nullable = false)
     private City city;
 
     private double temperature;

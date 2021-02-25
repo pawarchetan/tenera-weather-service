@@ -12,8 +12,8 @@ public enum Weather {
     }
 
     public static boolean shouldTakeUmbrella(String description) {
-        for(Weather weather: Weather.values()) {
-            if(weather.description.compareToIgnoreCase(description) == 0) {
+        for (Weather weather : Weather.values()) {
+            if (weather.description.compareToIgnoreCase(description) == 0) {
                 return true;
             }
         }

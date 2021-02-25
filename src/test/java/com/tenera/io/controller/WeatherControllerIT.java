@@ -19,16 +19,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class WeatherControllerIT {
-    @LocalServerPort
-    private int port;
-
-    private URL base;
-
-    @Autowired
-    private TestRestTemplate template;
-
     private static final String CURRENT_URL = "/current?location=";
     private static final String HISTORY_URL = "/history?location=";
+    @LocalServerPort
+    private int port;
+    private URL base;
+    @Autowired
+    private TestRestTemplate template;
 
     @BeforeEach
     public void setUp() throws Exception {

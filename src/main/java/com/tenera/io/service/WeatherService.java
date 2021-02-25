@@ -4,6 +4,7 @@ import com.tenera.io.dto.OpenWeatherMapApiResponse;
 import com.tenera.io.dto.WeatherDetailDto;
 import com.tenera.io.dto.WeatherHistoryDto;
 import com.tenera.io.exception.NoCityFoundException;
+import com.tenera.io.exception.TeneraApplicationException;
 import com.tenera.io.model.WeatherHistory;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,18 +37,18 @@ public class WeatherService {
         this.weatherHistoryService = weatherHistoryService;
     }
 
-    public WeatherDetailDto weatherByLocation(String location) throws Exception {
+    public WeatherDetailDto weatherByLocation(String location) {
         try {
             ResponseEntity<OpenWeatherMapApiResponse> response = getWeatherDetailsByApi(location);
             WeatherDetailDto weatherDetailDto = weatherDetailResponse(response, location);
-            auditSearchQuery(weatherDetailDto, location);
+            auditSearchQuery(weatherDetailDto);
             return weatherDetailDto;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             if (e instanceof HttpClientErrorException.NotFound) {
                 throw new NoCityFoundException("city not found");
             } else {
-                throw new Exception("internal server error");
+                throw new TeneraApplicationException("Something went wrong!");
             }
         }
     }
@@ -57,7 +58,7 @@ public class WeatherService {
         return mapHistories(weatherHistories);
     }
 
-    private void auditSearchQuery(WeatherDetailDto weatherDetailDto, String name) {
+    private void auditSearchQuery(WeatherDetailDto weatherDetailDto) {
         weatherHistoryService.auditSearchHistory(weatherDetailDto);
     }
 
